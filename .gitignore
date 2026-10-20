@@ -1,0 +1,52 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+*.pt
+*.npz
+*.csv
+*.json
+!results/*.json
+!results/*.csv
+.ipynb_checkpoints/
+# Secrets and environment files
+.env
+.env.*
+*.pem
+*.key
+*.token
+*.secret
+
+# Logs and hardware monitoring
+*.log
+results/logs/
+*.txt.bak
+
+# Academic and Presentation Privacy (Initial submission & Camera-ready manuscript, PDFs, slides, review notes)
+*.pdf
+*.pptx
+*.ppt
+*.key
+*.tex
+*.bib
+*.cls
+*.bst
+*.docx
+*.zip
+Corresponding_Author.txt
+paper/
+GD0/
+GD1/
+GD2/
+GD3/
+GD_FULL_DATA/
+_check_pages/
+_*
+
+# Temporary check files and artifacts
+tmp/
+temp/
+.DS_Store
+Thumbs.db

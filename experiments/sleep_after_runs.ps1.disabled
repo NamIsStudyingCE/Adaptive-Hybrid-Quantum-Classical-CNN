@@ -1,0 +1,38 @@
+# One-shot: sleep the machine after all noise benchmark runs complete AND the
+# merged 10-seed JSONs exist. Permanently self-disables via flag file + rename.
+# No system registration of any kind: this is a plain background process.
+$ErrorActionPreference = 'SilentlyContinue'
+$flag = "results/logs/sleep_executed.flag"
+$log = "results/logs/sleep_after_runs.log"
+$scriptPath = $MyInvocation.MyCommand.Path
+
+function Log($m) { Add-Content -Path $log -Value ("[{0}] {1}" -f (Get-Date -Format 'HH:mm:ss'), $m) }
+
+if (Test-Path $flag) {
+    Log "flag exists - permanently disabled, exiting without doing anything"
+    exit
+}
+
+Log "armed: waiting for all workers/orchestrator to exit AND merged JSONs to exist"
+
+while ($true) {
+    Start-Sleep -Seconds 60
+    $procs = @(Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
+        Where-Object { $_.CommandLine -match 'benchmark_runner' -or $_.CommandLine -match 'run_noise_parallel' })
+    $jsonOk = (Test-Path "results/results_t2_noise_short_10seeds.json") -and
+              (Test-Path "results/results_t2_noise_expected_10seeds.json")
+    Log ("check: live={0} mergedJSONs={1}" -f $procs.Count, $jsonOk)
+    if ($procs.Count -eq 0 -and $jsonOk) { break }
+}
+
+# one-shot guard + permanent disable BEFORE the sleep action
+Set-Content -Path $flag -Value ("one-shot consumed; sleep triggered " + (Get-Date -Format 'HH:mm:ss'))
+try {
+    Rename-Item -Path $scriptPath -NewName "sleep_after_runs.ps1.disabled" -ErrorAction Stop
+    Log "script renamed to .disabled - can never be armed again"
+} catch { Log ("self-rename failed (flag still guards): " + $_.Exception.Message) }
+
+Log "all runs complete + merged JSONs verified -> machine SLEEPING now"
+Start-Sleep -Seconds 5
+rundll32.exe powrprof.dll,SetSuspendState 0,1,0
+Log "returned from suspend (machine woke)" -ErrorAction SilentlyContinue
